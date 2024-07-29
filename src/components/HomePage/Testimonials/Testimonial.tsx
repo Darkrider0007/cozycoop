@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Autoplay from "embla-carousel-autoplay"
 import MotionWrap from '@/components/motion-wrap';
 import {
