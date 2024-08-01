@@ -4,7 +4,7 @@ import MotionWrap from '../motion-wrap'
 
 function Services() {
     return (
-        <div className='py-3 flex flex-col bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-100'>
+        <div className='py-3 md:py-6 flex flex-col bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-100'>
             <h2 className="text-2xl font-bold my-6 text-center">Services</h2>
             <MotionWrap className="mt-6  ">
                 <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 p-6 ">

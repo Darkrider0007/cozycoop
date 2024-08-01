@@ -14,10 +14,13 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-
+import axios, { AxiosError } from 'axios';
 import { BookUser, Loader2, MailIcon, PackageCheck, User } from 'lucide-react';
 import { PasswordInput } from "@/components/ui/password-input"
 import { useState } from "react"
+import { useToast } from "@/components/ui/use-toast"
+import { ToastAction, ToastClose } from "@/components/ui/toast"
+import { ApiResponse } from "@/types/ApiResponse"
 
 const formSchema = z.object({
     username: z.string().min(2).max(50),
@@ -31,6 +34,7 @@ const formSchema = z.object({
 export default function Page() {
     const router = useRouter()
     const [onClickSubmit, setOnClickSubmit] = useState(false)
+    const { toast } = useToast()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -44,9 +48,58 @@ export default function Page() {
         },
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        setOnClickSubmit(true)
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        // setOnClickSubmit(true)
         console.log(values)
+        const form = new FormData();
+        form.append('username', values.username);
+        form.append('name', values.name);
+        form.append('email', values.email);
+        form.append('password', values.password);
+        if (values.avatar) {
+            form.append('avatar', values.avatar, values.avatar.name);
+        }
+
+        console.log(form)
+
+        try {
+            const res = await axios.post<ApiResponse>('/api/sign-up', form, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            console.log(res.data)
+            if (res.data.success) {
+                toast({
+                    title: "Success",
+                    description: "Account created successfully",
+                    action: (
+                        <ToastAction altText="Dismiss">
+                            <ToastClose />
+                        </ToastAction>
+                    ),
+                })
+                // router.push('/login')
+            }
+
+        } catch (error) {
+            const axiosError = error as AxiosError<ApiResponse>
+            console.log(axiosError.response?.data)
+            toast({
+                title: "Error",
+                description: axiosError.response?.data.message || 'Something went wrong',
+                variant: "destructive",
+                action: (
+                    <ToastAction altText="Dismiss">
+                        <ToastClose />
+                    </ToastAction>
+                ),
+            })
+
+        } finally {
+            setOnClickSubmit(false)
+        }
+
     }
 
     return (
