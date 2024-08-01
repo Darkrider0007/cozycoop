@@ -96,7 +96,7 @@ export default function Page() {
                     <div className="mt-4 text-center text-sm">
                         Don&apos;t have an account?{" "}
                         <p
-                            onClick={() => router.push("/sign-up")}
+                            onClick={() => router.push("/signup")}
                             className="underline cursor-pointer">
                             Sign up
                         </p>
