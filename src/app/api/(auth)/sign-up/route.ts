@@ -2,6 +2,7 @@ import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/models/User.model";
 import bcrypt from 'bcryptjs';
 import { NextResponse } from "next/server";
+import { put } from '@vercel/blob';
 
 export async function POST(request: Request) {
     await dbConnect();
@@ -11,9 +12,9 @@ export async function POST(request: Request) {
         const name = formData.get('name');
         const email = formData.get('email');
         const password = formData.get('password');
-        const userAvatar = formData.get('avatar');
+        const userAvatar: File | null = formData.get('avatar') as File | null;
 
-        console.log(username, name, email, password, userAvatar);
+        // console.log(username, name, email, password, userAvatar);
 
         if (!username || !name || !email || !password) {
             return NextResponse.json({
@@ -31,8 +32,15 @@ export async function POST(request: Request) {
             return NextResponse.json({
                 success: false,
                 message: "Username already taken"
-            }, {
-                status: 400
+            });
+        }
+
+        const existingUserByEmail = await UserModel.findOne({ email });
+
+        if (existingUserByEmail) {
+            return NextResponse.json({
+                success: false,
+                message: "Email already taken"
             });
         }
 
@@ -40,20 +48,25 @@ export async function POST(request: Request) {
             return NextResponse.json({
                 success: false,
                 message: 'Password must be at least 8 characters'
-            }, {
-                status: 400
             });
         }
 
         const passwordString = password.toString();
         const hashedPassword = await bcrypt.hash(passwordString, 10);
 
+        let blob;
+        if(userAvatar){
+            blob = await put(userAvatar.name, userAvatar,{
+                access: 'public',
+            });
+        }
+
         const user = new UserModel({
             username,
             name,
             email,
             password: hashedPassword,
-            userAvatar
+            userAvatar : blob ? blob.url : null
         });
 
         await user.save();

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import axios, { AxiosError } from 'axios';
-import { BookUser, Loader2, MailIcon, PackageCheck, User } from 'lucide-react';
+import { BookUser, Loader2, MailIcon, PackageCheck, User, X } from 'lucide-react';
 import { PasswordInput } from "@/components/ui/password-input"
 import { useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
@@ -49,8 +49,7 @@ export default function Page() {
     })
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        // setOnClickSubmit(true)
-        console.log(values)
+        setOnClickSubmit(true)
         const form = new FormData();
         form.append('username', values.username);
         form.append('name', values.name);
@@ -60,15 +59,12 @@ export default function Page() {
             form.append('avatar', values.avatar, values.avatar.name);
         }
 
-        console.log(form)
-
         try {
             const res = await axios.post<ApiResponse>('/api/sign-up', form, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             })
-            console.log(res.data)
             if (res.data.success) {
                 toast({
                     title: "Success",
@@ -79,7 +75,13 @@ export default function Page() {
                         </ToastAction>
                     ),
                 })
-                // router.push('/login')
+                router.push('/login')
+            }else{
+                toast({
+                    title: "Error",
+                    description: res.data.message || 'Something went wrong',
+                    variant: "destructive",                    
+                })
             }
 
         } catch (error) {
@@ -88,12 +90,7 @@ export default function Page() {
             toast({
                 title: "Error",
                 description: axiosError.response?.data.message || 'Something went wrong',
-                variant: "destructive",
-                action: (
-                    <ToastAction altText="Dismiss">
-                        <ToastClose />
-                    </ToastAction>
-                ),
+                variant: "destructive",                
             })
 
         } finally {
