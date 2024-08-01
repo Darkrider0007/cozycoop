@@ -17,10 +17,11 @@ import { Input } from "@/components/ui/input"
 import axios, { AxiosError } from 'axios';
 import { BookUser, Loader2, MailIcon, PackageCheck, User, X } from 'lucide-react';
 import { PasswordInput } from "@/components/ui/password-input"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { ToastAction, ToastClose } from "@/components/ui/toast"
 import { ApiResponse } from "@/types/ApiResponse"
+import { useDebounceCallback } from 'usehooks-ts'
 
 const formSchema = z.object({
     username: z.string().min(2).max(50),
@@ -32,9 +33,14 @@ const formSchema = z.object({
 })
 
 export default function Page() {
+    const [username, setUsername] = useState('')
+    const [usernameMessage, setUsernameMessage] = useState('')
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false)
     const router = useRouter()
     const [onClickSubmit, setOnClickSubmit] = useState(false)
     const { toast } = useToast()
+
+    const debounced = useDebounceCallback(setUsername, 600)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -76,11 +82,11 @@ export default function Page() {
                     ),
                 })
                 router.push('/login')
-            }else{
+            } else {
                 toast({
                     title: "Error",
                     description: res.data.message || 'Something went wrong',
-                    variant: "destructive",                    
+                    variant: "destructive",
                 })
             }
 
@@ -90,7 +96,7 @@ export default function Page() {
             toast({
                 title: "Error",
                 description: axiosError.response?.data.message || 'Something went wrong',
-                variant: "destructive",                
+                variant: "destructive",
             })
 
         } finally {
@@ -98,6 +104,29 @@ export default function Page() {
         }
 
     }
+
+    useEffect(() => {
+        const checkUsernameUnique = async () => {
+            if (username) {
+                setIsCheckingUsername(true)
+                setUsernameMessage('')
+
+                try {
+                    const response = await axios.get(
+                        `/api/check-username-unique?username=${username}`
+                    );
+                    setUsernameMessage(response.data.message);
+                } catch (error) {
+                    const axiosError = error as AxiosError<ApiResponse>
+                    setUsernameMessage(axiosError.response?.data.message ||
+                        'Error while checking username')
+                } finally {
+                    setIsCheckingUsername(false)
+                }
+            }
+        }
+        checkUsernameUnique()
+    }, [username])
 
     return (
         <div className="w-full lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-[800px]">
@@ -122,16 +151,32 @@ export default function Page() {
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                             <FormField
-                                control={form.control}
                                 name="username"
+                                control={form.control}
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Username</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="username" {...field}
-                                                suffix={<User />}
+                                            <Input
+                                                placeholder="username"
+                                                {...field}
+                                                onChange={(e) => {
+                                                    debounced(e.target.value)
+                                                    field.onChange(e)
+                                                }}
                                             />
                                         </FormControl>
+                                        {isCheckingUsername && <Loader2 className="animate-spin" />}
+                                        {!isCheckingUsername && usernameMessage && (
+                                            <p
+                                                className={`text-sm ${usernameMessage === 'Username is unique'
+                                                    ? 'text-green-500'
+                                                    : 'text-red-500'
+                                                    }`}
+                                            >
+                                                {usernameMessage}
+                                            </p>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}
