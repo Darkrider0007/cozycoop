@@ -27,8 +27,8 @@ const formSchema = z.object({
     username: z.string().min(2).max(50),
     name: z.string().min(2).max(50),
     email: z.string().email(),
-    password: z.string().min(6).max(50),
-    confirmPassword: z.string().min(6).max(50),
+    password: z.string().min(8).max(50),
+    confirmPassword: z.string().min(8).max(50),
     avatar: z.any().optional(),
 })
 
@@ -169,7 +169,7 @@ export default function Page() {
                                         {isCheckingUsername && <Loader2 className="animate-spin" />}
                                         {!isCheckingUsername && usernameMessage && (
                                             <p
-                                                className={`text-sm ${usernameMessage === 'Username is unique'
+                                                className={`text-sm ${usernameMessage === 'Username available'
                                                     ? 'text-green-500'
                                                     : 'text-red-500'
                                                     }`}

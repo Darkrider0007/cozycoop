@@ -2,9 +2,12 @@ import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/models/User.model";
 import { z } from "zod";
 import { usernameValidation } from "@/schemas/signUpSchema";
+import { NextResponse } from "next/server";
 const usernameQuerySchema = z.object({
     username: usernameValidation,
 });
+
+export const revalidate = 0;
 
 export async function GET(request: Request) {
     await dbConnect();
@@ -19,12 +22,10 @@ export async function GET(request: Request) {
 
         if (!result.success) {
             const usernameErrors = result.error.format().username?._errors || [];
-            return Response.json({
+            return NextResponse.json({                
                 success: false,
-                message: usernameErrors?.length > 0 ? usernameErrors.join(", ")
-                    : "Invalid query parameter"
-            }, { status: 400 })
-
+                message: usernameErrors
+            })
         }
 
         const { username } = result.data;
@@ -34,16 +35,18 @@ export async function GET(request: Request) {
         });
 
         if (existingUserVerifiedByUsername) {
-            return new Response(JSON.stringify({
+            return NextResponse.json({
                 success: false,
                 message: "Username already taken"
-            }), { status: 400 })
+            })
         }
 
-        return new Response(JSON.stringify({
+        return NextResponse.json({
             success: true,
-            message: "Username is unique"
-        }), { status: 200 })
+            message: "Username available"
+        }, {
+            status: 200
+        })
 
     } catch (error) {
         console.error(error);
