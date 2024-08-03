@@ -3,6 +3,9 @@ import UserModel from "@/models/User.model";
 import bcrypt from 'bcryptjs';
 import { NextResponse } from "next/server";
 import { put } from '@vercel/blob';
+import { mailOptions, transporter } from "@/config/nodemailer";
+import { verifyAccountSyntax } from "../../../../../emails/verifyAccount";
+import { verificationCodeGenerator } from "@/helpers/verificationCodeGenerator";
 
 export async function POST(request: Request) {
     await dbConnect();
@@ -29,19 +32,23 @@ export async function POST(request: Request) {
 
         if (existingUserByUsername) {
             console.log(existingUserByUsername);
-            return NextResponse.json({
-                success: false,
-                message: "Username already taken"
-            });
+            if(existingUserByUsername.isVerified) {
+                return NextResponse.json({
+                    success: false,
+                    message: "Username already taken"
+                });
+            }
         }
 
         const existingUserByEmail = await UserModel.findOne({ email });
 
         if (existingUserByEmail) {
-            return NextResponse.json({
-                success: false,
-                message: "Email already taken"
-            });
+            if(existingUserByEmail.isVerified) {
+                return NextResponse.json({
+                    success: false,
+                    message: "Email already taken"
+                });
+            }
         }
 
         if (typeof password === 'string' && password.length < 8) {
@@ -54,6 +61,22 @@ export async function POST(request: Request) {
         const passwordString = password.toString();
         const hashedPassword = await bcrypt.hash(passwordString, 10);
 
+        const verificationCode:string = verificationCodeGenerator();
+
+        const sendVerificationEmail = await transporter.sendMail({
+            ...mailOptions(email.toString()),            
+            subject: "Test email",
+            text: "This is a test email",
+            html: verifyAccountSyntax({ name: name.toString(), verificationCode: verificationCode}),
+        });
+
+        if(!sendVerificationEmail) {
+            return NextResponse.json({
+                success: false,
+                message: "Error sending email"
+            });
+        }        
+
         let blob;
         if(userAvatar){
             blob = await put(userAvatar.name, userAvatar,{
@@ -61,12 +84,17 @@ export async function POST(request: Request) {
             });
         }
 
+        const expiryDate = new Date();
+        expiryDate.setHours(expiryDate.getHours() + 1);
+
         const user = new UserModel({
             username,
             name,
             email,
             password: hashedPassword,
-            userAvatar : blob ? blob.url : null
+            userAvatar : blob ? blob.url : null,
+            verificationCode,
+            verificationCodeExpires: expiryDate,
         });
 
         await user.save();

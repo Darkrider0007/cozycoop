@@ -81,7 +81,7 @@ export default function Page() {
                         </ToastAction>
                     ),
                 })
-                router.push('/login')
+                router.push(`/verifyAccount/${values.username}`)
             } else {
                 toast({
                     title: "Error",
