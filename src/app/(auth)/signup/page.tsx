@@ -56,6 +56,17 @@ export default function Page() {
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setOnClickSubmit(true)
+
+        if (values.password !== values.confirmPassword) {
+            toast({
+                title: "Error",
+                description: "Passwords do not match",
+                variant: "destructive",
+            })
+            setOnClickSubmit(false)
+            return
+        }
+
         const form = new FormData();
         form.append('username', values.username);
         form.append('name', values.name);
