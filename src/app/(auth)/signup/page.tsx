@@ -99,7 +99,7 @@ export default function Page() {
                     description: res.data.message || 'Something went wrong',
                     variant: "destructive",
                 })
-            }
+            }            
 
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>

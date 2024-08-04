@@ -19,7 +19,9 @@ import { Input } from "@/components/ui/input"
 import { BookUser, Loader2, MailIcon, PackageCheck, User, User2 } from 'lucide-react';
 import { PasswordInput } from "@/components/ui/password-input"
 import { useState } from "react"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
+import { useToast } from "@/components/ui/use-toast"
+import { ApiResponse } from "@/types/ApiResponse"
 
 const formSchema = z.object({
     identifier: z.string().min(2).max(50),
@@ -28,6 +30,7 @@ const formSchema = z.object({
 export default function Page() {
     const router = useRouter()
     const [onClickSubmit, setOnClickSubmit] = useState(false)
+    const { toast } = useToast()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -37,13 +40,32 @@ export default function Page() {
         },
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        // setOnClickSubmit(true)
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        setOnClickSubmit(true)
         try {
-            const res = axios.post('/api/login', values)
-            console.log(res)
+            const res = await axios.post('/api/login', values)
+            if (res.data.success) {
+                toast({
+                    title: "Success",
+                    description: res.data.message,
+                })
+                router.push('/home')
+            }else{
+                toast({
+                    title: "Error",
+                    description: res.data.message,
+                    variant: "destructive",
+                })
+            }
         } catch (error) {
-            
+            const axiosError = error as AxiosError<ApiResponse>;
+            toast({
+                title: "Error",
+                description: axiosError.response?.data.message ,
+                variant: "destructive",
+            })            
+        }finally{
+            setOnClickSubmit(false)
         }
     }
     return (
