@@ -110,6 +110,16 @@ export default function Page() {
                                     </FormItem>
                                 )}
                             />
+                            <div className="flex items-end justify-end">
+                                <p
+                                    onClick={() => router.push("/forgot-password")}
+                                    className="hover:underline cursor-pointer">
+                                    <>
+                                    Forgot password?
+                                    🤔
+                                    </>
+                                </p>
+                            </div>
 
                             <Button type="submit" disabled={onClickSubmit}>{
                                 onClickSubmit ?
